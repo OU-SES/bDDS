@@ -1,0 +1,25 @@
+/*
+ * Distributed under the OpenDDS License.
+ * See: http://www.opendds.org/license.html
+ */
+
+ //GPS GPRMC
+module Messenger{
+    @topic
+    struct Message {
+        @key long subject_id;
+        long utc;               //UTC of position (hhmmss.ss)
+        char posstatus;         //Position status (A= data valid, V=data invalid)
+        double lat;               //Latitude (DDmm.mm)
+        char lat_dir;           //Latitude direction: (N=North, S=South)
+        double lon;               //Longitude (DDDmm.mm)
+        char lon_dir;           //Longitude direction: (E= East, W=West)
+        long speed;             //speed over ground
+        long track;             //Track made good, degrees True
+        long date;               //Date: dd/mm/yy
+        float mag;              //Magnetic variation, degrees
+        char mag_dir;           //Magnetic variation direction
+        char mode;              //Positioning system mode indicator, we are using A, "Autonomous" here.
+        long check;              //check sum
+    };
+};
