@@ -304,8 +304,8 @@ install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 ### Option 1: Auto-generate IDL (Recommended)
 
 ```bash
-git clone <your-repo-url>
-cd <your-repo-dir>
+git clone https://github.com/OU-SES/bDDS.git
+cd https://github.com/OU-SES/bDDS.git
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build . --config Release
