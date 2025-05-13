@@ -354,3 +354,4 @@ Or run manually:
 ```bath
 ./bDDS_broker DCPSConfigFile rtps_tcp.ini (0:broker, 1:alternative broker) 100(max retain queue message) (global qos: 0|1|2) (number of dds thread pool) recv_topic(topic name) send_topic(topic name)
 ```
+Please make sure to change ip address in rtps_tcp.ini and rtps_tcp_alt.ini with your PC network setting. And [BDS](https://github.com/OU-SES/BDS) should be operating before running broker.
