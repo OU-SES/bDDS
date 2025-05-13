@@ -205,6 +205,27 @@ This release of OpenDDS has been tested using the following compilers:
 
 Once OpenDDS is on your PATH (or `DDS_ROOT` is set), continue with the steps below to build bDDS broker.
 
+# Additional Requirement: MQTT Packet Library
+
+This project depends on `MQTTPacket.dll` and `MQTTPacket.lib`, built from the [OU-SES/MQTT](https://github.com/OU-SES/MQTT) project.
+
+To include them:
+
+1. Clone and build the MQTT project:
+   ```bash
+   git clone https://github.com/OU-SES/MQTT.git
+   cd MQTT
+   # Follow the build instructions to generate MQTTPacket.dll and MQTTPacket.lib
+2. Copy the built artifacts into your bDDS project:
+```
+bDDS/
+ external/
+  mqtt/
+   include/ <-- MQTT headers
+   lib/     <-- MQTTPacket.lib
+   bin/     <-- MQTTPacket.dll
+```
+
 # Cmake for bDDS
 ```cmake
 cmake_minimum_required(VERSION 3.15)
@@ -279,9 +300,18 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${OpenDDS_INCLUDE_DIRS}
 )
 
-# Link with OpenDDS
+# Link with OpenDDS and MQTT
+target_link_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/external/mqtt/lib")
 target_link_libraries(${PROJECT_NAME}
     OpenDDS::Dcps
+    MQTTPacket
+)
+
+# Copy MQTT DLL to build directory after build
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/external/mqtt/bin/MQTTPacket.dll"
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>
 )
 
 # Set command-line args in Release mode for Visual Studio
