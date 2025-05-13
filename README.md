@@ -7,7 +7,7 @@
 Follow the official installation guide:  
 <https://opendds.readthedocs.io/en/latest-release/devguide/building/index.html>
 
-Once OpenDDS is on your PATH (or `DDS_ROOT` is set), continue with the steps below to build bDDS broker.
+Following session is a readme for OpenDDS.
 
 # OpenDDS
 
@@ -203,12 +203,124 @@ This release of OpenDDS has been tested using the following compilers:
 * gcc 9.2
 * Clang 6.0 (llvm.org) and 11.0 (Apple)
 
-## Building and Installing
+Once OpenDDS is on your PATH (or `DDS_ROOT` is set), continue with the steps below to build bDDS broker.
 
-For building and installation instructions see the [`INSTALL.md`](INSTALL.md)
-file in this directory.
+# Cmake for bDDS
+```cmake
+cmake_minimum_required(VERSION 3.15)
+project(bDDS_broker LANGUAGES CXX)
 
-## Quick Start with Docker
+# Use C++17 standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-See [`docs/docker.md`](docs/docker.md) for how to use the pre-built docker
-image.
+# Find OpenDDS
+find_package(OpenDDS REQUIRED)
+
+# Generate sources from IDL
+set(IDL_FILES
+    Messenger.idl
+    MessengerTypeSupport.idl
+    SphericalPointCloudTypeSupport.idl
+)
+
+foreach(idl_file IN LISTS IDL_FILES)
+    get_filename_component(basename ${idl_file} NAME_WE)
+    opendds_idl(${idl_file})
+    list(APPEND GENERATED_SRCS
+        "${basename}C.cpp"
+        "${basename}S.cpp"
+        "${basename}TypeSupportC.cpp"
+        "${basename}TypeSupportS.cpp"
+    )
+endforeach()
+
+# List of manually written sources
+set(SRC_FILES
+    BrokerClient.cpp
+    BrokerDataReaderlistener.cpp
+    BrokerParticipant.cpp
+    BrokerThreadMutex.cpp
+    DataReaderListenerImpl.cpp
+    HTTPHandler.cpp
+    HTTPJsonData.cpp
+    HTTPService.cpp
+    MessengerTypeSupportImpl.cpp
+    Publisher.cpp
+    SphericalPointCloudTypeSupportImpl.cpp
+    Subscriber.cpp
+    TCPHandler.cpp
+    Broker/BrokerMQTTPublisher.cpp
+    Broker/BrokerMQTTSubscriber.cpp
+    Broker/BrokerPublisher.cpp
+    Broker/BrokerSubscriber.cpp
+    Broker/BrokerTask.cpp
+    Broker/BrokerTaskQueue.cpp
+    Broker/DdsBrokerImpl.cpp
+    Broker/MQTTSession.cpp
+    DDSThread/DDSThread.cpp
+    SBDP/AltDiscoveredBrokerData.cpp
+    SBDP/AlternativeServerInfo.cpp
+    SBDP/SBDPThreadMutex.cpp
+)
+
+# Combine everything
+add_executable(${PROJECT_NAME}
+    ${SRC_FILES}
+    ${GENERATED_SRCS}
+)
+
+# Include directories
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Broker
+    ${CMAKE_CURRENT_SOURCE_DIR}/DDSThread
+    ${CMAKE_CURRENT_SOURCE_DIR}/SBDP
+    ${OpenDDS_INCLUDE_DIRS}
+)
+
+# Link with OpenDDS
+target_link_libraries(${PROJECT_NAME}
+    OpenDDS::Dcps
+)
+
+# Set command-line args in Release mode for Visual Studio
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    VS_DEBUGGER_COMMAND_ARGUMENTS "$<$<CONFIG:Release>:DCPSConfigFile rtps_tcp.ini 1 100 0 4 recv_topic send_topic>"
+)
+
+# Optional install target
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
+```
+
+## Prerequisites
+
+- [OpenDDS](https://opendds.org) (built with `configure` and `make`)
+- CMake 3.15+
+- Visual Studio 2019+ or GCC/Clang for Linux
+
+## Build Instructions
+
+### Option 1: Auto-generate IDL (Recommended)
+
+```bash
+git clone <your-repo-url>
+cd <your-repo-dir>
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . --config Release
+```
+
+### Option 2: Use pre-generated IDL files
+Comment out the `foreach(idl_file...)` section in `CMakeLists.txt` and uncomment the manually listed files like `MessengerC.cpp`, `MessengerS.cpp`, etc.
+The pre-generated IDL files describe GPS message format.
+
+## Run Instructions (Release Mode)
+If using Visual Studio, the following command-line arguments are automatically passed when you run the Release build:
+```bath
+DCPSConfigFile rtps_tcp.ini 1 100 0 4 GPS GPS
+```
+Or run manually:
+```bath
+./bDDS_broker DCPSConfigFile rtps_tcp.ini (0:broker, 1:alternative broker) 100(max retain queue message) (global qos: 0|1|2) (number of dds thread pool) recv_topic(topic name) send_topic(topic name)
+```
